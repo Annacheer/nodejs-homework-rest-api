@@ -5,3 +5,12 @@ const HttpError = (status, message) => {
 };
 
 module.exports = HttpError;
+
+// class HttpError extends Error {
+//   constructor(status, message) {
+//     super(message);
+//     this.status = status;
+//   }
+// }
+
+// module.exports = HttpError;
