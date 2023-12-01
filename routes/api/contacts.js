@@ -1,6 +1,6 @@
 const express = require("express");
 const { Contact, schemas } = require("../../models/contact");
-const { HttpError } = require("../../helpers/HttpError");
+const { HttpError } = require("../../helpers");
 const isValidId = require("../../middlewares");
 
 const router = express.Router();
@@ -29,7 +29,16 @@ router.get("/:contactId", isValidId, async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { error } = schemas.addSchema.validate(req.body);
+    const requiredFields = ["name", "email", "phone"];
+    for (const field of requiredFields) {
+      if (req.body[field] === undefined) {
+        return res
+          .status(400)
+          .json({ message: `missing required ${field} field` });
+      }
+    }
+
+    const { error } = schemas.postSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ message: error.message });
     }
