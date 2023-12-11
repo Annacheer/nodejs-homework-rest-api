@@ -2,8 +2,9 @@ const { Schema, model } = require("mongoose");
 const { handleMongooseError } = require("../helpers");
 const Joi = require("joi");
 
-const emailRegexp = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+const emailRegexp = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+//користувач, якого ми зберігаємо в базі
 const userSchema = new Schema(
   {
     name: {

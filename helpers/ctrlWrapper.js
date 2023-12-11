@@ -1,3 +1,5 @@
+//функція, яка отримує функцію і повертає її обгортку
+
 const ctrlWrapper = (ctrl) => {
   const func = async (req, res, next) => {
     try {
