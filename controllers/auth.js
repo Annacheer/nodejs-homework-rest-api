@@ -17,8 +17,10 @@ const register = async (req, res) => {
   const newUser = await User.create({ ...req.body, password: hashPassword }); //зберігаємо користувача в базі, а пароль в захешованому вигляді
 
   res.status(201).json({
-    email: newUser.email,
-    name: newUser.name,
+    user: {
+      email: newUser.email,
+      subscription: newUser.subscription,
+    },
   });
 };
 

@@ -7,10 +7,10 @@ const emailRegexp = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 //користувач, якого ми зберігаємо в базі
 const userSchema = new Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
+    // name: {
+    //   type: String,
+    //   required: true,
+    // },
     password: {
       type: String,
       required: [true, "Set password for user"],
@@ -34,7 +34,7 @@ const userSchema = new Schema(
 userSchema.post("save", handleMongooseError);
 
 const registerSchema = Joi.object({
-  name: Joi.string().required(),
+  // name: Joi.string().required(),
   email: Joi.string().pattern(emailRegexp).required(),
   password: Joi.string().min(6).required(),
 });
