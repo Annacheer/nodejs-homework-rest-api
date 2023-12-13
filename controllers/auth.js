@@ -3,8 +3,18 @@ const jwt = require("jsonwebtoken");
 const { User } = require("../models/user");
 const { HttpError, ctrlWrapper } = require("../helpers");
 const { SECRET_KEY } = process.env; //забираємо секретну строку зі змінних оточення process.env
+// const fs = require("fs/promises");
+// const path = require("path");
+
+// const avatarDir = path.join(__dirname, "public", "avatars");
 
 const register = async (req, res) => {
+  console.log("req.file:", req.file);
+  console.log("req.body:", req.body);
+
+  // const { path: tempUpload, originalname } = req.file;
+  // const resultUpload = path.join(avatarDir, originalname);
+  // await fs.rename(tempUpload, resultUpload);
   const { email, password } = req.body;
   const user = await User.findOne({ email }); //чи немає такої людини вже в базі
 
