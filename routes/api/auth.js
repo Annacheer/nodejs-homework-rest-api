@@ -3,8 +3,14 @@ const ctrl = require("../../controllers/auth");
 const { validateBody, authenticate } = require("../../middlewares");
 const { schemas } = require("../../models/user");
 const router = express.Router();
+const upload = require("../../multer-config");
 
-router.post("/register", validateBody(schemas.registerSchema), ctrl.register);
+router.post(
+  "/register",
+  upload.single("avatar"),
+  validateBody(schemas.registerSchema),
+  ctrl.register
+);
 
 router.post("/login", validateBody(schemas.loginSchema), ctrl.login);
 
