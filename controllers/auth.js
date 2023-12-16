@@ -1,20 +1,17 @@
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const path = require("path");
+const fs = require("fs/promises");
+const Jimp = require("jimp");
+
 const { User } = require("../models/user");
 const { HttpError, ctrlWrapper } = require("../helpers");
 const { SECRET_KEY } = process.env; //забираємо секретну строку зі змінних оточення process.env
-// const fs = require("fs/promises");
-// const path = require("path");
 
-// const avatarDir = path.join(__dirname, "public", "avatars");
+const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
 const register = async (req, res) => {
-  console.log("req.file:", req.file);
-  console.log("req.body:", req.body);
-
-  // const { path: tempUpload, originalname } = req.file;
-  // const resultUpload = path.join(avatarDir, originalname);
-  // await fs.rename(tempUpload, resultUpload);
   const { email, password } = req.body;
   const user = await User.findOne({ email }); //чи немає такої людини вже в базі
 
@@ -23,8 +20,13 @@ const register = async (req, res) => {
   }
 
   const hashPassword = await bcryptjs.hash(password, 10); //якщо немає, хешуємо пароль
+  const avatarURL = gravatar.url(email);
 
-  const newUser = await User.create({ ...req.body, password: hashPassword }); //зберігаємо користувача в базі, а пароль в захешованому вигляді
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+  }); //зберігаємо користувача в базі, а пароль в захешованому вигляді
 
   res.status(201).json({
     user: {
@@ -80,9 +82,28 @@ const logout = async (req, res) => {
   res.status(204).json("");
 };
 
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const { path: tempUpload, originalname } = req.file;
+
+  const image = await Jimp.read(tempUpload);
+  await image.resize(250, 250).quality(60).writeAsync(tempUpload);
+
+  const filename = `${_id}_${originalname}`;
+  const resultUpload = path.join(avatarsDir, filename);
+  await fs.rename(tempUpload, resultUpload);
+  const avatarURL = path.join("avatars", filename);
+  await User.findByIdAndUpdate(_id, { avatarURL });
+
+  res.json({
+    avatarURL,
+  });
+};
+
 module.exports = {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };
