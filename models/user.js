@@ -7,10 +7,6 @@ const emailRegexp = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 //користувач, якого ми зберігаємо в базі
 const userSchema = new Schema(
   {
-    // name: {
-    //   type: String,
-    //   required: true,
-    // },
     password: {
       type: String,
       required: [true, "Set password for user"],
