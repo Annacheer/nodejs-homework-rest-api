@@ -4,10 +4,11 @@ const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
 const Jimp = require("jimp");
+const { nanoid } = require("nanoid");
 
 const { User } = require("../models/user");
-const { HttpError, ctrlWrapper } = require("../helpers");
-const { SECRET_KEY } = process.env; //забираємо секретну строку зі змінних оточення process.env
+const { HttpError, ctrlWrapper, transport } = require("../helpers");
+const { SECRET_KEY, BASE_URL } = process.env; //забираємо секретну строку зі змінних оточення process.env
 
 const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
@@ -21,18 +22,75 @@ const register = async (req, res) => {
 
   const hashPassword = await bcryptjs.hash(password, 10); //якщо немає, хешуємо пароль
   const avatarURL = gravatar.url(email);
+  const verificationCode = nanoid();
 
-  const newUser = await User.create({
-    ...req.body,
-    password: hashPassword,
-    avatarURL,
-  }); //зберігаємо користувача в базі, а пароль в захешованому вигляді
+  const verifyEmail = {
+    to: email,
+    from: "margar1n@meta.ua",
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationCode}">Click verify email</a>`,
+  };
 
-  res.status(201).json({
-    user: {
-      email: newUser.email,
-      subscription: newUser.subscription,
-    },
+  try {
+    // First, try to send the verification email
+    await transport.sendMail(verifyEmail);
+
+    // Only after successful email sending, save the user
+    const newUser = await User.create({
+      ...req.body,
+      password: hashPassword,
+      avatarURL,
+      verificationCode,
+    }); //зберігаємо користувача в базі, а пароль в захешованому вигляді
+
+    res.status(201).json({
+      user: {
+        email: newUser.email,
+        subscription: newUser.subscription,
+      },
+    });
+  } catch (error) {
+    console.error("Error in sending email:", error);
+    res.status(500).json({ message: "Error sending verification email" });
+  }
+};
+
+const verifyEmail = async (req, res) => {
+  const { verificationCode } = req.params;
+  const user = await User.findOne({ verificationCode });
+  if (!user) {
+    throw HttpError(401, "Email not found");
+  }
+  await User.findByIdAndUpdate(user._id, {
+    verify: true,
+    verificationCode: "",
+  });
+
+  res.json({
+    message: "Verification successful",
+  });
+};
+
+const resendVerifyEmail = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw HttpError(401, "Email not found");
+  }
+  if (user.verify) {
+    throw HttpError(401, "Verification has already been passed");
+  }
+
+  const verifyEmail = {
+    to: email,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${user.verificationCode}">Click verify email</a>`,
+  };
+
+  await transport.sendMail(verifyEmail);
+
+  res.json({
+    message: "Verification email sent",
   });
 };
 
@@ -43,6 +101,11 @@ const login = async (req, res) => {
     //якщо немає, відсилаємо помилку
     throw HttpError(401, "Email or password is wrong");
   }
+
+  if (!user.verify) {
+    throw HttpError(401, "Email not verified");
+  }
+
   const passwordCompare = await bcryptjs.compare(password, user.password); //якщо є такий користувач, то порівнюємо паролі - той, який прийшов з тим, що в базі
   if (!passwordCompare) {
     //якщо не співпали, це помилка:
@@ -108,6 +171,8 @@ const updateAvatar = async (req, res) => {
 
 module.exports = {
   register: ctrlWrapper(register),
+  verifyEmail: ctrlWrapper(verifyEmail),
+  resendVerifyEmail: ctrlWrapper(resendVerifyEmail),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),

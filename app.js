@@ -4,17 +4,15 @@ const cors = require("cors");
 const contactsRouter = require("./routes/api/contacts");
 const dotenv = require("dotenv");
 const authRouter = require("./routes/api/auth");
-const upload = require("./middlewares/multer-config");
-const fs = require("fs/promises");
-const path = require("path");
-const { nanoid } = require("nanoid");
-// const avatarsRouter = require("./routes/api/avatars");
+// const upload = require("./middlewares/multer-config");
+// const fs = require("fs/promises");
+// const path = require("path");
+// const { nanoid } = require("nanoid");
 
 dotenv.config();
 const app = express();
 
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
-const avatars = [];
 
 app.use(logger(formatsLogger));
 app.use(cors());
@@ -24,23 +22,23 @@ app.use(express.static("public"));
 app.use("/users", authRouter); //цей запит оброблювати цим роутером
 app.use("/api/contacts", contactsRouter);
 
-app.get("/avatars", (req, res) => {
-  res.json(avatars);
-});
+// app.get("/avatars", (req, res) => {
+//   res.json(avatars);
+// });
 
-const avatarsDir = path.join(__dirname, "public", "avatars");
-app.post("/avatars", upload.single("avatar"), async (req, res) => {
-  const { path: tempUpload, originalname } = req.file;
-  const resultUpload = path.join(avatarsDir, originalname);
-  await fs.rename(tempUpload, resultUpload);
-  const avatar = path.join("avatars", originalname);
-  const newAvatar = {
-    id: nanoid(),
-    avatar,
-  };
-  avatars.push(newAvatar);
-  res.status(201).json(newAvatar);
-});
+// const avatarsDir = path.join(__dirname, "public", "avatars");
+// app.post("/avatars", upload.single("avatar"), async (req, res) => {
+//   const { path: tempUpload, originalname } = req.file;
+//   const resultUpload = path.join(avatarsDir, originalname);
+//   await fs.rename(tempUpload, resultUpload);
+//   const avatar = path.join("avatars", originalname);
+//   const newAvatar = {
+//     id: nanoid(),
+//     avatar,
+//   };
+//   avatars.push(newAvatar);
+//   res.status(201).json(newAvatar);
+// });
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });
